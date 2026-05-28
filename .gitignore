@@ -1,0 +1,17 @@
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+*.g.dart
+build/
+.idea/
+.vscode/
+*.iml
+local.properties
+android/.gradle/
+android/captures/
+android/local.properties
+ios/.symlinks/
+ios/Flutter/flutter_export_environment.sh
+*.log

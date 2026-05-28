@@ -1,0 +1,47 @@
+name: aom_ground_transport
+description: AOM Ground Transport Mobile — Gestion des missions de transport terrestre.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Base de données locale SQLite
+  drift: ^2.14.1
+  drift_flutter: ^0.2.0
+  sqlite3_flutter_libs: ^0.5.22
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^13.2.0
+
+  # Liens externes (WhatsApp, Maps)
+  url_launcher: ^6.2.5
+
+  # Utilitaires
+  intl: ^0.19.0
+  path_provider: ^2.1.2
+
+  # Sauvegarde
+  share_plus: ^9.0.0
+
+  # Icônes Material
+  cupertino_icons: ^1.0.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  drift_dev: ^2.14.1
+  build_runner: ^2.4.8
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/demo/

@@ -1,0 +1,58 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:   # Permet de déclencher manuellement depuis GitHub
+
+jobs:
+  build:
+    name: Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter (stable)
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Verify Flutter installation
+        run: flutter --version
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate Drift code
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: Run tests
+        run: flutter test --reporter=compact
+
+      - name: Build release APK
+        run: flutter build apk --release --no-obfuscate
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: aom-ground-transport-${{ github.sha }}
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      - name: Display APK info
+        run: |
+          echo "=== APK généré ==="
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+          echo "SHA: ${{ github.sha }}"

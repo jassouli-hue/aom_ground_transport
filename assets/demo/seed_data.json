@@ -1,0 +1,40 @@
+{
+  "drivers": [
+    {"name": "Youssef", "phone": "+212661924588"},
+    {"name": "Chauffeur 2", "phone": "+212661924588"},
+    {"name": "Chauffeur 3", "phone": "+212661924588"},
+    {"name": "Chauffeur 4", "phone": "+212661924588"}
+  ],
+  "vehicles": [
+    {"brand": "Mercedes", "plateNumber": "AOM-001", "capacity": 4},
+    {"brand": "Véhicule 2", "plateNumber": "AOM-002", "capacity": 4},
+    {"brand": "Véhicule 3", "plateNumber": "AOM-003", "capacity": 4},
+    {"brand": "Véhicule 4", "plateNumber": "AOM-004", "capacity": 4}
+  ],
+  "passengers": [
+    {"name": "Mr Fouad", "role": "CDB", "phone": "+212600000001", "baseCity": "Salé"},
+    {"name": "Mr Mehdi", "role": "Copilote", "phone": "+212600000002", "baseCity": "Mohammedia"},
+    {"name": "Saida", "role": "Hôtesse", "phone": "+212600000003", "baseCity": "Casablanca"}
+  ],
+  "locations": [
+    {"name": "Aéroport Mohammed V Casablanca", "shortCode": "GMMN", "city": "Casablanca", "latitude": 33.3675, "longitude": -7.5898, "isAirport": true},
+    {"name": "Aéroport Rabat-Salé", "shortCode": "GMME", "city": "Rabat-Salé", "latitude": 34.0515, "longitude": -6.7515, "isAirport": true},
+    {"name": "Aéroport Benslimane", "shortCode": "GMMB", "city": "Benslimane", "latitude": 33.6595, "longitude": -7.2201, "isAirport": true},
+    {"name": "Aéroport Marrakech Menara", "shortCode": "GMMX", "city": "Marrakech", "latitude": 31.6069, "longitude": -8.0363, "isAirport": true},
+    {"name": "Aéroport Fès-Saïss", "shortCode": "GMFF", "city": "Fès", "latitude": 33.9273, "longitude": -4.9779, "isAirport": true},
+    {"name": "Aéroport Tanger Ibn Battouta", "shortCode": "GMTT", "city": "Tanger", "latitude": 35.7269, "longitude": -5.9169, "isAirport": true},
+    {"name": "Aéroport Tétouan Sania Ramel", "shortCode": "GMTN", "city": "Tétouan", "latitude": 35.5946, "longitude": -5.3200, "isAirport": true},
+    {"name": "Base AOM Casablanca", "shortCode": "BASE", "city": "Casablanca", "latitude": 33.5731, "longitude": -7.5898, "isAirport": false},
+    {"name": "Salé Centre", "shortCode": "SALE", "city": "Salé", "latitude": 34.0531, "longitude": -6.7985, "isAirport": false},
+    {"name": "Mohammedia Centre", "shortCode": "MOHA", "city": "Mohammedia", "latitude": 33.6886, "longitude": -7.3828, "isAirport": false},
+    {"name": "Casablanca Centre", "shortCode": "CASA", "city": "Casablanca", "latitude": 33.5731, "longitude": -7.5898, "isAirport": false}
+  ],
+  "settings": [
+    {"key": "base_location_id", "value": "8"},
+    {"key": "average_speed_kmh", "value": "80"},
+    {"key": "company_name", "value": "AIR OCEAN MAROC"},
+    {"key": "pin_enabled", "value": "false"},
+    {"key": "pin_code", "value": ""},
+    {"key": "seed_done", "value": "true"}
+  ]
+}
