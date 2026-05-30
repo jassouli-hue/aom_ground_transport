@@ -27,12 +27,16 @@ class PassengerRepository {
     required String role,
     required String phone,
     required String baseCity,
+    double? baseLat,
+    double? baseLng,
   }) =>
       _db.passengerDao.insertPassenger(PassengersCompanion(
         name: Value(name),
         role: Value(role),
         phone: Value(phone),
         baseCity: Value(baseCity),
+        baseLat: Value(baseLat),
+        baseLng: Value(baseLng),
       ));
 
   Future<void> update(PassengerModel passenger) =>
@@ -42,6 +46,8 @@ class PassengerRepository {
         role: Value(passenger.role),
         phone: Value(passenger.phone),
         baseCity: Value(passenger.baseCity),
+        baseLat: Value(passenger.baseLat),
+        baseLng: Value(passenger.baseLng),
         isActive: Value(passenger.isActive),
         createdAt: Value(passenger.createdAt),
       ));
@@ -54,6 +60,8 @@ class PassengerRepository {
         role: row.role,
         phone: row.phone,
         baseCity: row.baseCity,
+        baseLat: row.baseLat,
+        baseLng: row.baseLng,
         isActive: row.isActive,
         createdAt: row.createdAt,
       );

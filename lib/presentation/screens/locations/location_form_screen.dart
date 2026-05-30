@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/theme/app_theme.dart';
 import '../../../data/models/known_location_model.dart';
 import '../../providers/database_provider.dart';
 import '../shared/widgets/aom_app_bar.dart';
+import '../shared/map_picker_screen.dart';
 
 class LocationFormScreen extends ConsumerStatefulWidget {
   final int? locationId;
@@ -57,6 +59,28 @@ class _LocationFormScreenState extends ConsumerState<LocationFormScreen> {
     super.dispose();
   }
 
+  Future<void> _openMapPicker() async {
+    final double? currentLat = double.tryParse(_latCtrl.text);
+    final double? currentLng = double.tryParse(_lngCtrl.text);
+
+    final result = await Navigator.of(context).push<LatLngResult>(
+      MaterialPageRoute(
+        builder: (_) => MapPickerScreen(
+          initialLat: currentLat,
+          initialLng: currentLng,
+          title: 'Choisir sur la carte',
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _latCtrl.text = result.lat.toStringAsFixed(4);
+        _lngCtrl.text = result.lng.toStringAsFixed(4);
+      });
+    }
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
@@ -104,8 +128,7 @@ class _LocationFormScreenState extends ConsumerState<LocationFormScreen> {
               controller: _nameCtrl,
               decoration: const InputDecoration(
                   labelText: 'Nom *', prefixIcon: Icon(Icons.place)),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Nom requis' : null,
+              validator: (v) => v == null || v.trim().isEmpty ? 'Nom requis' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -115,44 +138,73 @@ class _LocationFormScreenState extends ConsumerState<LocationFormScreen> {
                   prefixIcon: Icon(Icons.code),
                   hintText: 'GMMN, BASE, SALE…'),
               textCapitalization: TextCapitalization.characters,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Code requis' : null,
+              validator: (v) => v == null || v.trim().isEmpty ? 'Code requis' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _cityCtrl,
               decoration: const InputDecoration(
-                  labelText: 'Ville *',
-                  prefixIcon: Icon(Icons.location_city)),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Ville requise' : null,
+                  labelText: 'Ville *', prefixIcon: Icon(Icons.location_city)),
+              validator: (v) => v == null || v.trim().isEmpty ? 'Ville requise' : null,
             ),
             const SizedBox(height: 16),
+
+            // Bouton carte
+            OutlinedButton.icon(
+              onPressed: _openMapPicker,
+              icon: const Icon(Icons.map, color: AppColors.primary),
+              label: Text(
+                _latCtrl.text.isEmpty
+                    ? 'Choisir sur la carte'
+                    : 'Modifier sur la carte',
+                style: const TextStyle(color: AppColors.primary),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: AppColors.primary),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Coordonnées — affichées en lecture seule si remplies via carte
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
                     controller: _latCtrl,
-                    decoration: const InputDecoration(labelText: 'Latitude *'),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                    decoration: InputDecoration(
+                      labelText: 'Latitude *',
+                      prefixIcon: const Icon(Icons.north),
+                      fillColor: _latCtrl.text.isNotEmpty
+                          ? AppColors.primary.withOpacity(0.04)
+                          : null,
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Requis';
                       if (double.tryParse(v.trim()) == null) return 'Invalide';
                       return null;
                     },
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: TextFormField(
                     controller: _lngCtrl,
-                    decoration: const InputDecoration(labelText: 'Longitude *'),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                    decoration: const InputDecoration(
+                      labelText: 'Longitude *',
+                      prefixIcon: Icon(Icons.east),
+                    ),
+                    keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true, signed: true),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Requis';
                       if (double.tryParse(v.trim()) == null) return 'Invalide';
                       return null;
                     },
+                    onChanged: (_) => setState(() {}),
                   ),
                 ),
               ],

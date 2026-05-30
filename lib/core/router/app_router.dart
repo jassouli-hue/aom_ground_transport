@@ -12,6 +12,8 @@ import '../../presentation/screens/locations/location_form_screen.dart';
 import '../../presentation/screens/missions/missions_screen.dart';
 import '../../presentation/screens/missions/mission_create_screen.dart';
 import '../../presentation/screens/missions/mission_detail_screen.dart';
+import '../../presentation/screens/missions/mission_edit_screen.dart';
+import '../../presentation/screens/reports/report_screen.dart';
 import '../../presentation/screens/settings/settings_screen.dart';
 
 final appRouter = GoRouter(
@@ -98,8 +100,20 @@ final appRouter = GoRouter(
           builder: (context, state) => MissionDetailScreen(
             missionId: int.parse(state.pathParameters['id']!),
           ),
+          routes: [
+            GoRoute(
+              path: 'edit',
+              builder: (context, state) => MissionEditScreen(
+                missionId: int.parse(state.pathParameters['id']!),
+              ),
+            ),
+          ],
         ),
       ],
+    ),
+    GoRoute(
+      path: '/reports',
+      builder: (context, state) => const ReportScreen(),
     ),
     GoRoute(
       path: '/settings',

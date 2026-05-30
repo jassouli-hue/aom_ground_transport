@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'app.dart';
+import 'domain/services/notification_service.dart';
 import 'presentation/providers/database_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await initializeDateFormatting('fr_FR', null);
 
   runApp(
-    ProviderScope(
-      child: const _SeedWrapper(),
+    const ProviderScope(
+      child: _SeedWrapper(),
     ),
   );
 }
 
-/// Lance le seed au démarrage, puis affiche l'app.
 class _SeedWrapper extends ConsumerStatefulWidget {
   const _SeedWrapper();
 
@@ -29,19 +27,28 @@ class _SeedWrapperState extends ConsumerState<_SeedWrapper> {
   @override
   void initState() {
     super.initState();
-    _init();
+    // Utiliser addPostFrameCallback pour appeler ref après le premier build
+    WidgetsBinding.instance.addPostFrameCallback((_) => _init());
   }
 
   Future<void> _init() async {
     await ref.read(seedServiceProvider).seedIfNeeded();
-    if (mounted) setState(() => _ready = true);
+    // Initialiser le service de notifications
+    await NotificationService().initialize();
+    if (mounted) {
+      // Demander permission notifications Android 13+
+      await NotificationService().requestPermission(context);
+      setState(() => _ready = true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (!_ready) {
-      return const MaterialApp(
-        home: Scaffold(
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF003366))),
+        home: const Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,

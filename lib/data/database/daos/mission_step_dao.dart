@@ -19,4 +19,10 @@ class MissionStepDao extends DatabaseAccessor<AppDatabase>
 
   Future<int> deleteByMission(int missionId) =>
       (delete(missionSteps)..where((s) => s.missionId.equals(missionId))).go();
+
+  Future<int> deleteStep(int stepId) =>
+      (delete(missionSteps)..where((s) => s.id.equals(stepId))).go();
+
+  Future<bool> updateStep(MissionStepsCompanion entry) =>
+      update(missionSteps).replace(entry);
 }

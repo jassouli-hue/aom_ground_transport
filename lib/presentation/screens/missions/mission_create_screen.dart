@@ -14,16 +14,33 @@ import '../../providers/known_location_provider.dart';
 import '../../providers/database_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../shared/widgets/aom_app_bar.dart';
+import '../shared/map_picker_screen.dart';
 
 class _PassengerPickupEntry {
-  PassengerModel passenger;
+  // Passager AOM (null = invité)
+  PassengerModel? passenger;
+  // Invité externe
+  String? guestName;
+  String? guestPhone;
+  bool saveGuest; // "Mémoriser cet invité"
+  // Commun
   KnownLocationModel? pickupLocation;
   String pickupCity;
+  double? pickupLat;
+  double? pickupLng;
+
+  bool get isGuest => passenger == null;
+  String get displayName => isGuest ? (guestName ?? 'Invité') : passenger!.displayName;
 
   _PassengerPickupEntry({
-    required this.passenger,
+    this.passenger,
+    this.guestName,
+    this.guestPhone,
+    this.saveGuest = false,
     this.pickupLocation,
     required this.pickupCity,
+    this.pickupLat,
+    this.pickupLng,
   });
 }
 
@@ -46,11 +63,22 @@ class _MissionCreateScreenState extends ConsumerState<MissionCreateScreen> {
   DateTime _scheduledAt = DateTime.now().add(const Duration(hours: 1));
   final List<_PassengerPickupEntry> _passengers = [];
   final _notesCtrl = TextEditingController();
+  final _refCtrl = TextEditingController();
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Pre-fill reference with auto-generated value (user can override)
+    final now = DateTime.now();
+    final seq = now.millisecondsSinceEpoch % 1000;
+    _refCtrl.text = 'AOM-${now.year}-${seq.toString().padLeft(3, '0')}';
+  }
 
   @override
   void dispose() {
     _notesCtrl.dispose();
+    _refCtrl.dispose();
     super.dispose();
   }
 
@@ -74,7 +102,7 @@ class _MissionCreateScreenState extends ConsumerState<MissionCreateScreen> {
   }
 
   Future<void> _addPassenger(List<PassengerModel> available) async {
-    final already = _passengers.map((e) => e.passenger.id).toSet();
+    final already = _passengers.map((e) => e.passenger?.id).whereType<int>().toSet();
     final choices = available.where((p) => !already.contains(p.id)).toList();
     if (choices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -90,6 +118,94 @@ class _MissionCreateScreenState extends ConsumerState<MissionCreateScreen> {
       _passengers.add(_PassengerPickupEntry(
         passenger: selected,
         pickupCity: selected.baseCity,
+        pickupLat: selected.baseLat,
+        pickupLng: selected.baseLng,
+      ));
+    });
+  }
+
+  Future<void> _addGuest() async {
+    final nameCtrl = TextEditingController();
+    final phoneCtrl = TextEditingController();
+    bool saveGuest = false;
+
+    final result = await showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => AlertDialog(
+          title: const Row(children: [
+            Icon(Icons.person_add_alt, color: AppColors.accent, size: 20),
+            SizedBox(width: 8),
+            Text('Ajouter un invité', style: TextStyle(fontSize: 16)),
+          ]),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Nom de l\'invité *',
+                  prefixIcon: Icon(Icons.person),
+                ),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: phoneCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Téléphone WhatsApp (optionnel)',
+                  prefixIcon: Icon(Icons.phone),
+                  hintText: '+212XXXXXXXXX',
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 8),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Mémoriser cet invité', style: TextStyle(fontSize: 13)),
+                subtitle: const Text('Ajouter à la liste des passagers', style: TextStyle(fontSize: 11)),
+                value: saveGuest,
+                onChanged: (v) => setDlg(() => saveGuest = v ?? false),
+                controlAffinity: ListTileControlAffinity.leading,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Annuler')),
+            ElevatedButton(
+              onPressed: () {
+                if (nameCtrl.text.trim().isEmpty) return;
+                Navigator.pop(ctx, {
+                  'name': nameCtrl.text.trim(),
+                  'phone': phoneCtrl.text.trim(),
+                  'save': saveGuest,
+                });
+              },
+              child: const Text('Ajouter'),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (result == null || !mounted) return;
+
+    // Mémoriser si demandé
+    if (result['save'] == true) {
+      await ref.read(passengerRepositoryProvider).create(
+        name: result['name'] as String,
+        role: 'Invité',
+        phone: result['phone'] as String? ?? '',
+        baseCity: '',
+      );
+    }
+
+    setState(() {
+      _passengers.add(_PassengerPickupEntry(
+        guestName: result['name'] as String,
+        guestPhone: (result['phone'] as String?)?.isEmpty == false ? result['phone'] as String : null,
+        saveGuest: result['save'] as bool,
+        pickupCity: '',
       ));
     });
   }
@@ -136,12 +252,14 @@ class _MissionCreateScreenState extends ConsumerState<MissionCreateScreen> {
         baseLocation: baseLoc,
         averageSpeedKmh: speed,
         notes: _notesCtrl.text.trim().isEmpty ? null : _notesCtrl.text.trim(),
+        customReference: _refCtrl.text.trim().isEmpty ? null : _refCtrl.text.trim(),
         passengers: _passengers.map((e) => PassengerPickup(
           passenger: e.passenger,
           pickupLocation: e.pickupLocation,
           pickupCity: e.pickupCity,
-          pickupLat: e.pickupLocation?.latitude,
-          pickupLng: e.pickupLocation?.longitude,
+          // Priorité aux coordonnées choisies sur la carte
+          pickupLat: e.pickupLat ?? e.pickupLocation?.latitude,
+          pickupLng: e.pickupLng ?? e.pickupLocation?.longitude,
         )).toList(),
       );
 
@@ -176,6 +294,19 @@ class _MissionCreateScreenState extends ConsumerState<MissionCreateScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Référence
+            _SectionTitle('Référence mission'),
+            TextFormField(
+              controller: _refCtrl,
+              decoration: const InputDecoration(
+                prefixIcon: Icon(Icons.tag),
+                hintText: 'AOM-2026-001',
+              ),
+              textCapitalization: TextCapitalization.characters,
+              validator: (v) => (v == null || v.trim().isEmpty) ? 'Référence requise' : null,
+            ),
+            const SizedBox(height: 20),
+
             // Type
             _SectionTitle('Type de mission'),
             Row(
@@ -347,20 +478,84 @@ class _MissionCreateScreenState extends ConsumerState<MissionCreateScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(e.passenger.displayName,
+                              Text(e.passenger?.displayName ?? e.guestName ?? 'Invité',
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w600, fontSize: 13)),
                               const SizedBox(height: 4),
                               TextFormField(
                                 initialValue: e.pickupCity,
                                 decoration: const InputDecoration(
-                                  labelText: 'Ville de prise en charge',
+                                  labelText: 'Lieu de prise en charge',
                                   isDense: true,
                                   contentPadding: EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 8),
                                 ),
                                 onChanged: (v) =>
                                     setState(() => e.pickupCity = v),
+                              ),
+                              const SizedBox(height: 6),
+                              // Coordonnées GPS si définies via carte
+                              if (e.pickupLat != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Text(
+                                    '📍 ${e.pickupLat!.toStringAsFixed(4)}, ${e.pickupLng!.toStringAsFixed(4)}',
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              // Bouton carte
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: () async {
+                                    final result = await Navigator.of(context)
+                                        .push<LatLngResult>(
+                                      MaterialPageRoute(
+                                        builder: (_) => MapPickerScreen(
+                                          initialLat: e.pickupLat,
+                                          initialLng: e.pickupLng,
+                                          title:
+                                              'Position de ${e.passenger?.name ?? e.guestName ?? 'Invité'}',
+                                        ),
+                                      ),
+                                    );
+                                    if (result != null && mounted) {
+                                      setState(() {
+                                        e.pickupLat = result.lat;
+                                        e.pickupLng = result.lng;
+                                        // Auto-remplir la ville depuis Nominatim
+                                        if (result.city != null && result.city!.isNotEmpty) {
+                                          e.pickupCity = result.city!;
+                                        }
+                                      });
+                                    }
+                                  },
+                                  icon: Icon(
+                                    e.pickupLat != null
+                                        ? Icons.edit_location
+                                        : Icons.add_location_alt,
+                                    size: 16,
+                                    color: AppColors.primary,
+                                  ),
+                                  label: Text(
+                                    e.pickupLat != null
+                                        ? 'Modifier position'
+                                        : 'Choisir sur la carte',
+                                    style: const TextStyle(
+                                        fontSize: 12, color: AppColors.primary),
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 6),
+                                    side: BorderSide(
+                                        color: AppColors.primary
+                                            .withOpacity(0.4)),
+                                  ),
+                                ),
                               ),
                             ],
                           ),

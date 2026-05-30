@@ -10,10 +10,11 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Base de données locale SQLite
+  # Base de données SQLite
   drift: ^2.14.1
-  drift_flutter: ^0.2.0
   sqlite3_flutter_libs: ^0.5.22
+  path_provider: ^2.1.2
+  path: ^1.9.0
 
   # State management
   flutter_riverpod: ^2.5.1
@@ -24,15 +25,30 @@ dependencies:
   # Liens externes (WhatsApp, Maps)
   url_launcher: ^6.2.5
 
+  # Carte OpenStreetMap (sans clé API)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+
   # Utilitaires
   intl: ^0.19.0
-  path_provider: ^2.1.2
-
-  # Sauvegarde
-  share_plus: ^9.0.0
 
   # Icônes Material
   cupertino_icons: ^1.0.6
+
+  # Export PDF
+  pdf: ^3.10.8
+  printing: ^5.12.0
+
+  # Distances routières réelles (OSRM)
+  http: ^1.2.1
+
+  # Notifications locales planifiées
+  flutter_local_notifications: ^17.2.4
+  timezone: ^0.9.4
+
+  # Export / Import / Partage
+  share_plus: ^10.0.0
+  file_picker: ^8.0.0
 
 dev_dependencies:
   flutter_test:
@@ -40,8 +56,20 @@ dev_dependencies:
   flutter_lints: ^3.0.0
   drift_dev: ^2.14.1
   build_runner: ^2.4.8
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/aom_logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/aom_logo.png"
+  web:
+    generate: false
 
 flutter:
   uses-material-design: true
   assets:
     - assets/demo/
+    - assets/images/

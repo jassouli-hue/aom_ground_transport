@@ -1,10 +1,13 @@
 import 'mission_step_model.dart';
 
 class MissionPassengerEntry {
-  final int passengerId;
+  final int? passengerId;       // null = invité externe
   final String passengerName;
   final String passengerRole;
   final String passengerPhone;
+  final bool isGuest;
+  final String? guestName;
+  final String? guestPhone;
   final String pickupCity;
   final int pickupOrder;
   final double? pickupLat;
@@ -13,10 +16,13 @@ class MissionPassengerEntry {
   final int missionPassengerId;
 
   const MissionPassengerEntry({
-    required this.passengerId,
+    this.passengerId,
     required this.passengerName,
     required this.passengerRole,
     required this.passengerPhone,
+    this.isGuest = false,
+    this.guestName,
+    this.guestPhone,
     required this.pickupCity,
     required this.pickupOrder,
     this.pickupLat,
@@ -24,6 +30,15 @@ class MissionPassengerEntry {
     required this.whatsappStatus,
     required this.missionPassengerId,
   });
+
+  /// Vrai nom affiché (invité ou équipage)
+  String get displayName => isGuest ? (guestName ?? 'Invité') : passengerName;
+
+  /// Téléphone WhatsApp effectif
+  String get whatsappPhone => isGuest ? (guestPhone ?? '') : passengerPhone;
+
+  /// Peut recevoir un WhatsApp
+  bool get hasPhone => whatsappPhone.isNotEmpty;
 }
 
 class MissionModel {

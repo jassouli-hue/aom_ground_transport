@@ -105,23 +105,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
 
-          // Sauvegarde
-          const _SettingSection('Sauvegarde'),
+          // Sauvegarde & Restauration
+          const _SettingSection('Sauvegarde & Restauration'),
           ListTile(
-            leading: const Icon(Icons.backup),
-            title: const Text('Exporter les données'),
-            subtitle: const Text('Partager un fichier JSON de sauvegarde'),
-            onTap: () async {
-              try {
-                await ref.read(backupServiceProvider).shareBackup();
-              } catch (e) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Erreur export: $e')),
-                  );
-                }
-              }
-            },
+            leading: const Icon(Icons.file_upload_outlined, color: AppColors.primary),
+            title: const Text('Exporter en JSON'),
+            subtitle: const Text('Sauvegarde complète — partager via WhatsApp, Drive…'),
+            trailing: const Icon(Icons.share, size: 18, color: AppColors.textSecondary),
+            onTap: () => _doExport(context, 'json'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.table_chart_outlined, color: AppColors.accent),
+            title: const Text('Exporter en CSV'),
+            subtitle: const Text('Toutes les tables (Excel/Sheets) — 5 fichiers'),
+            trailing: const Icon(Icons.share, size: 18, color: AppColors.textSecondary),
+            onTap: () => _doExport(context, 'csv'),
+          ),
+          ListTile(
+            leading: const Icon(Icons.file_download_outlined, color: AppColors.success),
+            title: const Text('Importer depuis JSON'),
+            subtitle: const Text('Restauration complète — remplace toutes les données'),
+            trailing: const Icon(Icons.folder_open, size: 18, color: AppColors.textSecondary),
+            onTap: () => _doImport(context),
           ),
           const Divider(),
 
@@ -139,29 +144,194 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Future<void> _pickBase(
-      BuildContext context, List<KnownLocationModel> locs) async {
-    final selected = await showDialog<KnownLocationModel>(
+  Future<void> _doExport(BuildContext context, String format) async {
+    final svc = ref.read(backupServiceProvider);
+    try {
+      if (format == 'json') {
+        await svc.shareJson();
+      } else {
+        await svc.shareCsv();
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur export : $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _doImport(BuildContext context) async {
+    final svc = ref.read(backupServiceProvider);
+
+    final path = await svc.pickJsonFile();
+    if (path == null || !context.mounted) return;
+
+    final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Sélectionner la base'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView(
-            shrinkWrap: true,
-            children: locs.map((l) => ListTile(
-              title: Text(l.name),
-              subtitle: Text(l.city),
-              onTap: () => Navigator.pop(context, l),
-            )).toList(),
+        title: const Text('Restaurer la base de données ?'),
+        content: const Text(
+          'Toutes les données actuelles (chauffeurs, véhicules, passagers, missions) '
+          'seront remplacées par celles du fichier JSON.\n\nCette action est irréversible.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
           ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Restaurer', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(children: [
+          CircularProgressIndicator(),
+          SizedBox(width: 16),
+          Text('Restauration en cours…'),
+        ]),
+      ),
+    );
+
+    try {
+      await svc.importFromFile(path);
+      if (context.mounted) {
+        Navigator.of(context).pop(); // ferme le loader
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Base de données restaurée avec succès'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur import : $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _pickBase(
+      BuildContext context, List<KnownLocationModel> locs) async {
+    if (locs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucune destination configurée. Ajoutez d\'abord une destination.'),
+          backgroundColor: AppColors.warning,
+        ),
+      );
+      return;
+    }
+
+    // Bottom sheet → aucun problème de contexte de navigation
+    final selected = await showModalBottomSheet<KnownLocationModel>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 6),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.home, color: AppColors.primary, size: 20),
+                  SizedBox(width: 8),
+                  Text('Sélectionner la base de départ',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700,
+                          color: AppColors.primary)),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 350),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: locs.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (_, i) {
+                  final l = locs[i];
+                  final isCurrent = _baseLoc?.id == l.id;
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: isCurrent
+                          ? AppColors.primary.withOpacity(0.12)
+                          : Colors.grey.shade100,
+                      child: Icon(
+                        isCurrent ? Icons.home : Icons.place_outlined,
+                        color: isCurrent ? AppColors.primary : AppColors.textSecondary,
+                        size: 18,
+                      ),
+                    ),
+                    title: Text(l.name,
+                        style: TextStyle(
+                            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                            fontSize: 14)),
+                    subtitle: Text(l.city,
+                        style: const TextStyle(fontSize: 12)),
+                    trailing: isCurrent
+                        ? const Icon(Icons.check_circle,
+                            color: AppColors.primary, size: 20)
+                        : null,
+                    onTap: () => Navigator.of(sheetCtx).pop(l),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
         ),
       ),
     );
-    if (selected != null) {
-      await ref.read(settingsServiceProvider).setBaseLocationId(selected.id);
-      setState(() => _baseLoc = selected);
-      ref.invalidate(baseLocationIdProvider);
+
+    if (selected != null && mounted) {
+      try {
+        await ref.read(settingsServiceProvider).setBaseLocationId(selected.id);
+        if (mounted) {
+          setState(() => _baseLoc = selected);
+          ref.invalidate(baseLocationIdProvider);
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('✓ Base définie : ${selected.name}'),
+            backgroundColor: AppColors.success,
+            duration: const Duration(seconds: 2),
+          ));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text('Erreur sauvegarde : $e'),
+            backgroundColor: AppColors.error,
+          ));
+        }
+      }
     }
   }
 

@@ -73,7 +73,7 @@ class WhatsAppPassengerButtons extends ConsumerWidget {
         final ok = await waService.openWhatsApp(
           missionId: mission.id,
           recipientType: 'PASSAGER',
-          recipientId: passenger.passengerId,
+          recipientId: passenger.passengerId ?? 0,
           recipientName: passenger.passengerName,
           recipientPhone: passenger.passengerPhone,
           message: message,

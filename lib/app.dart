@@ -13,8 +13,6 @@ class AomApp extends ConsumerWidget {
       theme: buildAppTheme(),
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
-      locale: const Locale('fr', 'FR'),
-      supportedLocales: const [Locale('fr', 'FR'), Locale('en', 'US')],
     );
   }
 }

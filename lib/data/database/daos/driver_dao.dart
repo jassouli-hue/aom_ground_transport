@@ -8,10 +8,16 @@ class DriverDao extends DatabaseAccessor<AppDatabase> with _$DriverDaoMixin {
   DriverDao(super.db);
 
   Future<List<Driver>> getAllActive() =>
-      (select(drivers)..where((d) => d.isActive.equals(true))).get();
+      (select(drivers)
+            ..where((d) => d.isActive.equals(true))
+            ..orderBy([(d) => OrderingTerm.asc(d.name)]))
+          .get();
 
   Stream<List<Driver>> watchAllActive() =>
-      (select(drivers)..where((d) => d.isActive.equals(true))).watch();
+      (select(drivers)
+            ..where((d) => d.isActive.equals(true))
+            ..orderBy([(d) => OrderingTerm.asc(d.name)]))
+          .watch();
 
   Future<Driver?> getById(int id) =>
       (select(drivers)..where((d) => d.id.equals(id))).getSingleOrNull();

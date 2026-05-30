@@ -4,6 +4,8 @@ class PassengerModel {
   final String role;
   final String phone;
   final String baseCity;
+  final double? baseLat;
+  final double? baseLng;
   final bool isActive;
   final DateTime createdAt;
 
@@ -13,6 +15,8 @@ class PassengerModel {
     required this.role,
     required this.phone,
     required this.baseCity,
+    this.baseLat,
+    this.baseLng,
     required this.isActive,
     required this.createdAt,
   });

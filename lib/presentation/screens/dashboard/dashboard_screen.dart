@@ -26,20 +26,31 @@ class DashboardScreen extends ConsumerWidget {
       backgroundColor: AppColors.surface,
       appBar: AppBar(
         backgroundColor: AppColors.primary,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            const Text('AOM Ground Transport',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-            companyAsync.when(
-              data: (name) => Text(name,
-                  style: const TextStyle(fontSize: 11, color: Colors.white70)),
-              loading: () => const SizedBox.shrink(),
-              error: (_, __) => const SizedBox.shrink(),
+            Image.asset('assets/images/aom_logo.png', height: 34),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Ground Transport',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                companyAsync.when(
+                  data: (name) => Text(name,
+                      style: const TextStyle(fontSize: 11, color: Colors.white70)),
+                  loading: () => const SizedBox.shrink(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+              ],
             ),
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.picture_as_pdf, color: Colors.white),
+            tooltip: 'Rapport PDF',
+            onPressed: () => context.push('/reports'),
+          ),
           IconButton(
             icon: const Icon(Icons.settings, color: Colors.white),
             onPressed: () => context.push('/settings'),

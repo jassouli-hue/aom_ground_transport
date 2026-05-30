@@ -9,10 +9,16 @@ class PassengerDao extends DatabaseAccessor<AppDatabase>
   PassengerDao(super.db);
 
   Future<List<Passenger>> getAllActive() =>
-      (select(passengers)..where((p) => p.isActive.equals(true))).get();
+      (select(passengers)
+            ..where((p) => p.isActive.equals(true))
+            ..orderBy([(p) => OrderingTerm.asc(p.name)]))
+          .get();
 
   Stream<List<Passenger>> watchAllActive() =>
-      (select(passengers)..where((p) => p.isActive.equals(true))).watch();
+      (select(passengers)
+            ..where((p) => p.isActive.equals(true))
+            ..orderBy([(p) => OrderingTerm.asc(p.name)]))
+          .watch();
 
   Future<Passenger?> getById(int id) =>
       (select(passengers)..where((p) => p.id.equals(id))).getSingleOrNull();

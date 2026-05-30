@@ -41,4 +41,7 @@ class MissionDao extends DatabaseAccessor<AppDatabase> with _$MissionDaoMixin {
     final result = await query.getSingle();
     return result.read(countExp) ?? 0;
   }
+
+  Future<int> deleteMission(int id) =>
+      (delete(missions)..where((m) => m.id.equals(id))).go();
 }

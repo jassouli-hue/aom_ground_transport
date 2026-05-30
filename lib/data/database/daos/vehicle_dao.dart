@@ -8,10 +8,16 @@ class VehicleDao extends DatabaseAccessor<AppDatabase> with _$VehicleDaoMixin {
   VehicleDao(super.db);
 
   Future<List<Vehicle>> getAllActive() =>
-      (select(vehicles)..where((v) => v.isActive.equals(true))).get();
+      (select(vehicles)
+            ..where((v) => v.isActive.equals(true))
+            ..orderBy([(v) => OrderingTerm.asc(v.brand)]))
+          .get();
 
   Stream<List<Vehicle>> watchAllActive() =>
-      (select(vehicles)..where((v) => v.isActive.equals(true))).watch();
+      (select(vehicles)
+            ..where((v) => v.isActive.equals(true))
+            ..orderBy([(v) => OrderingTerm.asc(v.brand)]))
+          .watch();
 
   Future<Vehicle?> getById(int id) =>
       (select(vehicles)..where((v) => v.id.equals(id))).getSingleOrNull();

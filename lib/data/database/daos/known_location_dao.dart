@@ -9,14 +9,21 @@ class KnownLocationDao extends DatabaseAccessor<AppDatabase>
   KnownLocationDao(super.db);
 
   Future<List<KnownLocation>> getAllActive() =>
-      (select(knownLocations)..where((l) => l.isActive.equals(true))).get();
+      (select(knownLocations)
+            ..where((l) => l.isActive.equals(true))
+            ..orderBy([(l) => OrderingTerm.asc(l.name)]))
+          .get();
 
   Stream<List<KnownLocation>> watchAllActive() =>
-      (select(knownLocations)..where((l) => l.isActive.equals(true))).watch();
+      (select(knownLocations)
+            ..where((l) => l.isActive.equals(true))
+            ..orderBy([(l) => OrderingTerm.asc(l.name)]))
+          .watch();
 
   Future<List<KnownLocation>> getAirports() =>
       (select(knownLocations)
-            ..where((l) => l.isAirport.equals(true) & l.isActive.equals(true)))
+            ..where((l) => l.isAirport.equals(true) & l.isActive.equals(true))
+            ..orderBy([(l) => OrderingTerm.asc(l.name)]))
           .get();
 
   Future<KnownLocation?> getById(int id) =>

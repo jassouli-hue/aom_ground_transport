@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:drift/drift.dart';
-import 'package:drift_flutter/drift_flutter.dart';
+import 'package:drift/native.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import 'daos/driver_dao.dart';
 import 'daos/vehicle_dao.dart';
@@ -38,6 +41,8 @@ class Passengers extends Table {
   TextColumn get role => text().withLength(min: 1, max: 100)();
   TextColumn get phone => text().withLength(min: 8, max: 20)();
   TextColumn get baseCity => text().withLength(min: 1, max: 100)();
+  RealColumn get baseLat => real().nullable()();
+  RealColumn get baseLng => real().nullable()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -75,7 +80,11 @@ class Missions extends Table {
 class MissionPassengers extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get missionId => integer().references(Missions, #id)();
-  IntColumn get passengerId => integer().references(Passengers, #id)();
+  // Passager AOM (null = invité externe)
+  IntColumn get passengerId => integer().references(Passengers, #id).nullable()();
+  // Invité externe : passengerId = null, guestName/guestPhone renseignés
+  TextColumn get guestName => text().nullable()();
+  TextColumn get guestPhone => text().nullable()();
   IntColumn get pickupLocationId => integer().references(KnownLocations, #id).nullable()();
   TextColumn get pickupCity => text().nullable()();
   IntColumn get pickupOrder => integer().withDefault(const Constant(0))();
@@ -149,16 +158,54 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {
           await m.createAll();
         },
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.addColumn(passengers, passengers.baseLat);
+            await m.addColumn(passengers, passengers.baseLng);
+          }
+          if (from < 3) {
+            // Recréation de mission_passengers :
+            // passengerId devient nullable + ajout guestName/guestPhone
+            await customStatement('''
+              CREATE TABLE mission_passengers_v3 (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                mission_id INTEGER NOT NULL REFERENCES missions(id),
+                passenger_id INTEGER REFERENCES passengers(id),
+                guest_name TEXT,
+                guest_phone TEXT,
+                pickup_location_id INTEGER REFERENCES known_locations(id),
+                pickup_city TEXT,
+                pickup_order INTEGER NOT NULL DEFAULT 0,
+                whatsapp_status TEXT NOT NULL DEFAULT 'NON_ENVOYE'
+              )
+            ''');
+            await customStatement('''
+              INSERT INTO mission_passengers_v3
+                (id, mission_id, passenger_id, guest_name, guest_phone,
+                 pickup_location_id, pickup_city, pickup_order, whatsapp_status)
+              SELECT id, mission_id, passenger_id, NULL, NULL,
+                     pickup_location_id, pickup_city, pickup_order, whatsapp_status
+              FROM mission_passengers
+            ''');
+            await customStatement('DROP TABLE mission_passengers');
+            await customStatement(
+                'ALTER TABLE mission_passengers_v3 RENAME TO mission_passengers');
+          }
+        },
       );
 }
 
 QueryExecutor _openConnection() {
-  return driftDatabase(name: 'aom_ground_transport');
+  return LazyDatabase(() async {
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'aom_ground_transport.sqlite'));
+    return NativeDatabase.createInBackground(file);
+  });
 }

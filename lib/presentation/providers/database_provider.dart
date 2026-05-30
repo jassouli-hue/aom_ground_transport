@@ -9,6 +9,8 @@ import '../../domain/services/distance_service.dart';
 import '../../domain/services/google_maps_link_service.dart';
 import '../../domain/services/whatsapp_message_service.dart';
 import '../../domain/services/mission_builder_service.dart';
+import '../../domain/services/osrm_routing_service.dart';
+import '../../domain/services/notification_service.dart';
 import '../../domain/services/backup_service.dart';
 import '../../domain/services/settings_service.dart';
 import '../../domain/services/seed_service.dart';
@@ -42,6 +44,13 @@ final missionRepositoryProvider = Provider<MissionRepository>((ref) {
 
 final distanceServiceProvider = Provider<DistanceService>((_) => DistanceService());
 
+final osrmRoutingServiceProvider =
+    Provider<OsrmRoutingService>((_) => OsrmRoutingService());
+
+final notificationServiceProvider = Provider<NotificationService>((_) {
+  return NotificationService();
+});
+
 final googleMapsLinkServiceProvider = Provider<GoogleMapsLinkService>(
     (_) => GoogleMapsLinkService());
 
@@ -52,8 +61,9 @@ final whatsAppMessageServiceProvider = Provider<WhatsAppMessageService>((ref) {
 final missionBuilderServiceProvider = Provider<MissionBuilderService>((ref) {
   return MissionBuilderService(
     ref.watch(appDatabaseProvider),
-    ref.watch(distanceServiceProvider),
+    ref.watch(osrmRoutingServiceProvider),
     ref.watch(googleMapsLinkServiceProvider),
+    ref.watch(notificationServiceProvider),
   );
 });
 

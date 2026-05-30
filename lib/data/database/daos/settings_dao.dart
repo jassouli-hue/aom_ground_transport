@@ -17,11 +17,17 @@ class SettingsDao extends DatabaseAccessor<AppDatabase>
   }
 
   Future<void> setValue(String key, String value) async {
-    await into(settings).insertOnConflictUpdate(
-      SettingsCompanion(
-        key: Value(key),
-        value: Value(value),
-        updatedAt: Value(DateTime.now()),
+    final entry = SettingsCompanion(
+      key: Value(key),
+      value: Value(value),
+      updatedAt: Value(DateTime.now()),
+    );
+    // ON CONFLICT(key) — la contrainte UNIQUE est sur key, pas sur id
+    await into(settings).insert(
+      entry,
+      onConflict: DoUpdate(
+        (old) => entry,
+        target: [settings.key],
       ),
     );
   }
