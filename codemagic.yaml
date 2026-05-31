@@ -11,6 +11,6 @@
         script: flutter pub get
       - name: Build iOS
         script: |
-          flutter build ios --debug --no-codesign
+          flutter build ios --simulator --debug
     artifacts:
-      - build/ios/iphoneos/Runner.app
+      - build/ios/iphonesimulator/Runner.app
