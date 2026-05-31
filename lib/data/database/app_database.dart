@@ -206,6 +206,8 @@ QueryExecutor _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'aom_ground_transport.sqlite'));
-    return NativeDatabase.createInBackground(file);
+    // NativeDatabase.createInBackground peut échouer silencieusement
+    // en mode release (AOT) avec Drift 2.33+ → on utilise NativeDatabase direct
+    return NativeDatabase(file);
   });
 }

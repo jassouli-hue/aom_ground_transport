@@ -32,14 +32,20 @@ class _SeedWrapperState extends ConsumerState<_SeedWrapper> {
   }
 
   Future<void> _init() async {
-    await ref.read(seedServiceProvider).seedIfNeeded();
-    // Initialiser le service de notifications
-    await NotificationService().initialize();
-    if (mounted) {
-      // Demander permission notifications Android 13+
-      await NotificationService().requestPermission(context);
-      setState(() => _ready = true);
+    try {
+      await ref.read(seedServiceProvider).seedIfNeeded();
+    } catch (e) {
+      debugPrint('[AOM] seedIfNeeded error: $e');
     }
+    try {
+      await NotificationService().initialize();
+      if (mounted) {
+        await NotificationService().requestPermission(context);
+      }
+    } catch (e) {
+      debugPrint('[AOM] notification init error: $e');
+    }
+    if (mounted) setState(() => _ready = true);
   }
 
   @override

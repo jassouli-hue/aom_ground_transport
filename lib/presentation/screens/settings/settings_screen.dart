@@ -105,6 +105,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const Divider(),
 
+          // Données
+          const _SettingSection('Données'),
+          ListTile(
+            leading: const Icon(Icons.delete_sweep_outlined, color: AppColors.error),
+            title: const Text('Réinitialiser les missions'),
+            subtitle: const Text('Supprime toutes les missions — chauffeurs, véhicules et passagers conservés'),
+            trailing: const Icon(Icons.chevron_right, size: 18, color: AppColors.textSecondary),
+            onTap: () => _resetMissions(context),
+          ),
+          const Divider(),
+
           // Sauvegarde & Restauration
           const _SettingSection('Sauvegarde & Restauration'),
           ListTile(
@@ -142,6 +153,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _resetMissions(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Réinitialiser les missions ?'),
+        content: const Text(
+          'Toutes les missions, étapes et logs WhatsApp seront supprimés définitivement.\n\n'
+          'Chauffeurs, véhicules, passagers et lieux restent intacts.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Réinitialiser', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+
+    final db = ref.read(appDatabaseProvider);
+    try {
+      await db.transaction(() async {
+        await db.delete(db.missionSteps).go();
+        await db.delete(db.missionPassengers).go();
+        await db.delete(db.notificationLogs).go();
+        await db.delete(db.missions).go();
+      });
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('✓ Toutes les missions ont été supprimées'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
   }
 
   Future<void> _doExport(BuildContext context, String format) async {
