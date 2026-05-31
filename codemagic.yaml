@@ -9,8 +9,16 @@
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
+      - name: Set bundle ID
+        script: |
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.aom.groundtransport" ios/Runner/Info.plist
       - name: Build iOS
         script: |
-          flutter build ios --simulator --debug
+          flutter build ios --debug --no-codesign
+      - name: Package IPA
+        script: |
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          zip -r Runner.ipa Payload
     artifacts:
-      - build/ios/iphonesimulator/Runner.app
+      - Runner.ipa
