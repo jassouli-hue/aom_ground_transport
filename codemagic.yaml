@@ -14,7 +14,7 @@
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.aom.groundtransport" ios/Runner/Info.plist
       - name: Build iOS
         script: |
-          flutter build ios --debug --no-codesign
+          flutter build ios --release --no-codesign
       - name: Package IPA
         script: |
           mkdir -p Payload
